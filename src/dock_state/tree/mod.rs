@@ -120,22 +120,22 @@ impl TabDestination {
 /// For "Vertical" nodes:
 ///  - left child contains Top node.
 ///  - right child contains Bottom node.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Tree<Tab> {
     // Binary tree vector
-    pub(super) nodes: Vec<Node<Tab>>,
+    pub nodes: Vec<Node<Tab>>,
     focused_node: Option<NodeIndex>,
     // Whether all subnodes of the tree is collapsed
     collapsed: bool,
     collapsed_leaf_count: i32,
 }
 
-impl<Tab> fmt::Debug for Tree<Tab> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Tree").finish_non_exhaustive()
-    }
-}
+// impl<Tab> fmt::Debug for Tree<Tab> {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         f.debug_struct("Tree").finish_non_exhaustive()
+//     }
+// }
 
 impl<Tab> Default for Tree<Tab> {
     fn default() -> Self {
@@ -803,6 +803,7 @@ impl<Tab> Tree<Tab> {
         F: FnMut(&mut Tab) -> bool,
     {
         let mut emptied_nodes = HashSet::default();
+
         for (index, node) in self.nodes.iter_mut().enumerate() {
             node.retain_tabs(&mut predicate);
             if node.is_empty() {
@@ -835,7 +836,11 @@ impl<Tab> Tree<Tab> {
     fn balance(&mut self, emptied_nodes: HashSet<NodeIndex>) {
         let mut emptied_parents = HashSet::default();
         for parent_index in emptied_nodes.into_iter().filter_map(|ni| ni.parent()) {
-            if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty() {
+            if self[parent_index].is_leaf(){
+                // NOTE: how was this working at all without this?
+                continue;
+            }
+            if self[parent_index.left()].is_empty() && self[parent_index.right()].is_empty(){
                 self[parent_index] = Node::Empty;
                 emptied_parents.insert(parent_index);
             } else if self[parent_index.left()].is_empty() {
